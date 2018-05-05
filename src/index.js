@@ -3,6 +3,7 @@
  *by fxp  
  */
 
+import './css/index.css'
 const san = require('san');
 
 const MyApp = san.defineComponent({
@@ -16,4 +17,4 @@ const MyApp = san.defineComponent({
 });
 
 const myApp = new MyApp();
-myApp.attach(document.body);
+myApp.attach(document.getElementById('root'));
