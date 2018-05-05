@@ -1,0 +1,33 @@
+{
+  "name": "ife",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "dependencies": {
+    "babel-core": "^6.26.3",
+    "babel-loader": "^7.1.4",
+    "babel-preset-env": "^1.6.1",
+    "css-loader": "^0.28.11",
+    "path": "^0.12.7",
+    "san": "^3.5.7",
+    "webpack": "^4.7.0"
+  },
+  "devDependencies": {
+    "style-loader": "^0.21.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev":"webpack --mode development",
+    "build":"webpack --mode production"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ruphi/IFE.git"
+  },
+  "author": "fxp",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Ruphi/IFE/issues"
+  },
+  "homepage": "https://github.com/Ruphi/IFE#readme"
+}
