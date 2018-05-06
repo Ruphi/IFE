@@ -38,7 +38,7 @@ let DataControl = san.defineComponent({
         '<div>'+
         '<div class="input-group">' +
         '   <input type="text" value="{=name=}" placeholder="姓名（string）"/>'+
-        '   <input type="text" value="{=age=}" placeholder="年龄（number）"/>'+
+        '   <input type="number" value="{=age=}" placeholder="年龄（number）"/>'+
         '   <input type="text" value="{=introduction=}" placeholder="简介（string）"/>'+
         '</div>'+
         '<div class="message">' +
@@ -60,14 +60,14 @@ let DataControl = san.defineComponent({
     initData:function () {
         return {
             name:'',
-            age:null,
+            age:Number(),
             introduction:''
         }
     },
     //移除信息
     removeMsg:function () {
         this.data.set('name', '');
-        this.data.set('age',null);
+        this.data.set('age',Number());
         this.data.set('introduction', '');
     }
 });
