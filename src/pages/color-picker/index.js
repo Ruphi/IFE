@@ -127,4 +127,4 @@ import './index.less'
     window.ColorPicker = ColorPicker;
 })();
 
-const colorPicker = new ColorPicker();
+new ColorPicker();
