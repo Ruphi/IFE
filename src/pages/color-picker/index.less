@@ -1,4 +1,5 @@
 .color-picker-container{
+  height: 200px;
   padding: 20px;
   .color-picker-area{
     width: 200px;
@@ -19,5 +20,22 @@
     float: left;
     background: linear-gradient(top, #F00 0%, #FF0 16.66%, #0F0 33.33%, #0FF 50%, #00F 66.66%, #F0F 83.33%, #F00 100%);
     background: -webkit-linear-gradient(top, #F00 0%, #FF0 16.66%, #0F0 33.33%, #0FF 50%, #00F 66.66%, #F0F 83.33%, #F00 100%);
+  }
+  .color-picker-input-container{
+    width: 120px;
+    float: left;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    div{
+      flex: 1;
+      label{
+        display: inline-block;
+        width: 1.5em;
+      }
+      input{
+        margin-left: 5px;
+      }
+    }
   }
 }
