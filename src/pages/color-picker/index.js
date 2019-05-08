@@ -1,6 +1,11 @@
 import './index.less'
 
 (function () {
+    function setAreaBgColor(that, h) {
+        let {r, g, b} = that.getColorAreaBackground(h);
+        that.setPickerAreaRGBA(r, g, b);
+    }
+
     const ColorPicker = function (options) {
         this.h = 0;
         this.s = 50;
@@ -17,8 +22,13 @@ import './index.less'
     * */
     ColorPicker.prototype.init = function () {
         this.createElem();
+        this.bindAreaBarEvent();
         this.createInput();
+        this.createResult();
         this.initValue();
+        this.setPickerAreaDotPosition();
+        this.setPickerBarSubPosition();
+        this.updateResult();
     };
 
     /*
@@ -27,37 +37,51 @@ import './index.less'
     * 将选择区块渲染到DOM中
     * */
     ColorPicker.prototype.createElem = function () {
-        const that = this;
         //创建选择器容器
         const wrap = document.createElement('div');
         wrap.classList.add('color-picker-container');
         this.pickerWrap = wrap;
-        //创建SL选择区块并绑定事件
+        //创建SL选择区块
         this.pickerArea = document.createElement('div');
         this.pickerArea.classList.add('color-picker-area');
+        this.pickerAreaDot = document.createElement('div');
+        this.pickerAreaDot.classList.add('color-picker-area-dot');
+        //创建H选择区块
+        this.pickerBar = document.createElement('div');
+        this.pickerBar.classList.add('color-picker-bar');
+        this.pickerBarSub = document.createElement('div');
+        this.pickerBarSub.classList.add('color-picker-bar-sub');
+        //渲染DOM
+        this.pickerArea.appendChild(this.pickerAreaDot);
+        this.pickerBar.appendChild(this.pickerBarSub);
+        wrap.appendChild(this.pickerArea);
+        wrap.appendChild(this.pickerBar);
+        this.options.el.appendChild(this.pickerWrap);
+    };
+
+    /*
+    * 区块事件绑定
+    * */
+    ColorPicker.prototype.bindAreaBarEvent = function (){
+        const that = this;
+
         this.pickerArea.addEventListener('click', function (ev) {
-            let s = that.s = ev.offsetX * 100 / ev.target.clientWidth | 0;
-            let l = that.l = 100 - (ev.offsetY * 100 / ev.target.clientHeight) | 0;
+            that.s = (ev.pageX - that.pickerArea.offsetLeft) * 100 / that.pickerArea.clientWidth | 0;
+            that.l = 100 - ((ev.pageY - that.pickerArea.offsetTop) * 100 / that.pickerArea.clientHeight) | 0;
             const res = that.HSL2RGB(that.h, that.s, that.l);
             //更新HSL和RGB的值
-            that.s = s;
-            that.l = l;
             that.setHSLValue();
+            that.setPickerAreaDotPosition();
             that.r = res.r;
             that.g = res.g;
             that.b = res.b;
             that.setRGBValue();
         });
-        //创建H选择区块并绑定事件
-        this.pickerBar = document.createElement('div');
-        this.pickerBar.classList.add('color-picker-bar');
-        this.pickerBar.addEventListener('click', function (ev) {
-            console.log(ev.offsetY);
-            console.log(ev.pageY - that.pickerBar.offsetTop);
 
+        this.pickerBar.addEventListener('click', function (ev) {
             let h = that.h = (ev.offsetY * 359 / ev.target.clientHeight) | 0;
-            let {r, g, b} = that.getColorAreaBackground(h);
-            that.setPickerBarRGBA(r, g, b);
+            setAreaBgColor(that, h);
+            that.setPickerBarSubPosition();
             //更新HSL和RGB的值
             that.setHSLValue();
             const temp = that.HSL2RGB(that.h, that.s, that.l);
@@ -66,10 +90,32 @@ import './index.less'
             that.b = temp.b;
             that.setRGBValue();
         });
-        //渲染DOM
-        wrap.appendChild(this.pickerArea);
-        wrap.appendChild(this.pickerBar);
-        this.options.el.appendChild(this.pickerWrap);
+
+    };
+
+    /*
+    * 设置SL选择区块的位置标识
+    * */
+    ColorPicker.prototype.setPickerAreaDotPosition = function (){
+        let offset = this.pickerAreaDot.clientWidth/2;
+        let areaHeight = this.pickerArea.clientHeight,
+            areaWidth = this.pickerArea.clientWidth;
+
+        let dotTop = areaHeight - (this.l / 100 * areaHeight) - offset,
+            dotLeft = this.s / 100 * areaWidth - offset;
+
+        this.pickerAreaDot.style.top = dotTop + 'px';
+        this.pickerAreaDot.style.left = dotLeft + 'px';
+    };
+
+    /*
+    * 设置色相选择区块的位置标识
+    * */
+    ColorPicker.prototype.setPickerBarSubPosition = function (){
+      let offset = this.pickerBarSub.offsetHeight/2;
+      let barSubTop = this.h / 359 * this.pickerBar.clientHeight - offset;
+
+      this.pickerBarSub.style.top = barSubTop + 'px';
     };
 
     /*
@@ -86,6 +132,8 @@ import './index.less'
             that.s = temp.saturation;
             that.l = temp.lightness;
             that.setHSLValue();
+            setAreaBgColor(that, that.h);
+            that.setPickerBarSubPosition();
         }
 
         function updateRGB() {
@@ -98,17 +146,20 @@ import './index.less'
 
         const RGBInputCallback = function (input) {
             let colorAttr = input.getAttribute('data-color-attr').toLowerCase();
+            input.value = parseInt(input.value);
             that[colorAttr] = input.value;
             if (input.value === '' || input.value < 0) {
                 input.value = 0;
             }else if (input.value > 255) {
                 input.value = 255;
             }
+            that.updateResult();
             updateHSL();
         };
 
         const HSLInputCallback = function (input) {
             let colorAttr = input.getAttribute('data-color-attr').toLowerCase();
+            input.value = parseInt(input.value);
             that[colorAttr] = input.value;
             if (input.value === '' || input.value < 0) {
                 input.value = 0;
@@ -116,6 +167,7 @@ import './index.less'
                 switch (colorAttr) {
                     case 'h':
                         if (input.value >= 360) input.value = 359;
+                        setAreaBgColor(that, input.value);
                         break;
                     case 's':
                     case 'l':
@@ -123,6 +175,7 @@ import './index.less'
                         break;
                 }
             }
+            that.setPickerBarSubPosition();
             updateRGB();
         };
 
@@ -133,6 +186,47 @@ import './index.less'
         this.inputFactory('inputS', inputWrap, HSLInputCallback);
         this.inputFactory('inputL', inputWrap, HSLInputCallback);
         this.pickerWrap.appendChild(inputWrap);
+    };
+
+    /*
+    * 创建结果显示区
+    * */
+    ColorPicker.prototype.createResult = function (){
+        //创建结果预览和HEX显示区
+        this.pickerResult = document.createElement('div');
+        this.pickerResult.classList.add('color-picker-result');
+
+        const block = document.createElement('div');
+        block.classList.add('color-picker-result-block');
+        this.pickerResult.appendChild(block);
+
+        const hexContainer = document.createElement('div');
+        const text = document.createElement('span');
+        text.innerHTML = '<span style="color: #999;">HEX: </span>';
+        hexContainer.appendChild(text);
+        const hexValue = document.createElement('div');
+        hexValue.className = 'hex-value';
+        hexContainer.appendChild(hexValue);
+        this.pickerResult.appendChild(hexContainer);
+
+        this.pickerWrap.appendChild(this.pickerResult);
+    };
+
+    /*
+    * 更新结果显示区
+    * */
+    ColorPicker.prototype.updateResult = function (){
+        const block = this.pickerResult.querySelector('.color-picker-result-block');
+        block.style.backgroundColor = `rgba(${this.r},${this.g},${this.b},${1})`;
+        const hexValueContainer = this.pickerResult.querySelector('.hex-value');
+        hexValueContainer.innerHTML = `${this.getHexa(this.r, this.g, this.b)}
+                                        </br>
+                                        <span style="color: #999">RGB:</span> 
+                                        </br>
+                                        rgb(${this.r},${this.g},${this.b})</br>
+                                        <span style="color: #999">HSL:</span></br>
+                                        hsl(${this.h},${this.s}%,${this.l}%)
+                                       `;
     };
 
     /*
@@ -154,6 +248,7 @@ import './index.less'
         this['inputR'].value = this.r;
         this['inputG'].value = this.g;
         this['inputB'].value = this.b;
+        this.updateResult();
     };
 
     /*
@@ -194,10 +289,6 @@ import './index.less'
                 this[inputName].max = 100;//HL最大值为100
         }
         //输入框绑定事件，通过回调方法执行不同的操作
-        this[inputName].addEventListener('blur', function (ev) {
-            const that = this;
-            callback.call(null, that);
-        });
         this[inputName].addEventListener('change', function (ev) {
             const that = this;
             callback.call(null, that);
@@ -234,7 +325,7 @@ import './index.less'
     /*
     * 通过色相选择条，更新SL选择区域的背景颜色
     * */
-    ColorPicker.prototype.setPickerBarRGBA = function (r=0, g=0, b=0, alpha=1) {
+    ColorPicker.prototype.setPickerAreaRGBA = function (r=0, g=0, b=0, alpha=1) {
         if (!this.isValidRGBValue(r) || !this.isValidRGBValue(g) || !this.isValidRGBValue(b)) {
             return false;
         }
@@ -248,60 +339,28 @@ import './index.less'
         let red	= r / 255,
             green = g / 255,
             blue = b / 255;
+        let cmax = Math.max(red, green, blue),
+            cmin = Math.min(red, green, blue),
+            delta = cmax - cmin,
+            hue = 0,
+            saturation = 0,
+            lightness = (cmax + cmin) / 2,
+            X = (1 - Math.abs(2 * lightness - 1));
 
-        let max = Math.max(red, green, blue),
-            min = Math.min(red, green, blue);
-
-        let h, s, l = (max + min) / 2;
-
-        if (max === min) {
-            h = s = 0;
-        }else {
-            let d = max - min;
-            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-            switch (max) {
-                case red:
-                    h = (green - blue) / d + (green < blue ? 6 : 0);
-                    break;               
-                case green:
-                    h = (blue - red) / d + 2;
-                    break;               
-                case blue:
-                    h = (red - green) / d + 4;
-                    break;
-            }
-            h /= 6;
+        if (delta) {
+            if (cmax === red ) { hue = ((green - blue) / delta); }
+            if (cmax === green ) { hue = 2 + (blue - red) / delta; }
+            if (cmax === blue ) { hue = 4 + (red - green) / delta; }
+            if (cmax) saturation = delta / X;
         }
 
-        return {
-            hue: Math.floor(h*100),
-            saturation: Math.round(s*100),
-            lightness: Math.round(l*100)
-        };
-
-        //
-        // let cmax = Math.max(red, green, blue),
-        //     cmin = Math.min(red, green, blue),
-        //     delta = cmax - cmin,
-        //     hue = 0,
-        //     saturation = 0,
-        //     lightness = (cmax + cmin) / 2,
-        //     X = (1 - Math.abs(2 * lightness - 1));
-        //
-        // if (delta) {
-        //     if (cmax === red ) { hue = ((green - blue) / delta); }
-        //     if (cmax === green ) { hue = 2 + (blue - red) / delta; }
-        //     if (cmax === blue ) { hue = 4 + (red - green) / delta; }
-        //     if (cmax) saturation = delta / X;
-        // }
-        //
-        // hue = 60 * hue | 0;
-        // if (hue < 0) {
-        //     hue += 360;
-        // }
-        // saturation = (saturation * 100) | 0;
-        // lightness = (lightness * 100) | 0;
-        // return {hue, saturation, lightness};
+        hue = 60 * hue | 0;
+        if (hue < 0) {
+            hue += 360;
+        }
+        saturation = (saturation * 100) | 0;
+        lightness = (lightness * 100) | 0;
+        return {hue, saturation, lightness};
     };
 
     /*
@@ -310,69 +369,29 @@ import './index.less'
     ColorPicker.prototype.HSL2RGB = function (h = 0, s = 50, l = 50) {
         let sat = s / 100;
         let light = l / 100;
-        let hue = h / 359;
-        let r, g, b;
+        let C = sat * (1 - Math.abs(2 * light - 1));
+        let H = h / 60;
+        let X = C * (1 - Math.abs(H % 2 - 1));
+        let m = light - C/2;
+        let precision = 255;
 
-        function hue2rgb(p, q, t) {
-            if (t < 0) {
-                t += 1;
-            }
-            if (t > 1) {
-                t -= 1;
-            }
-            if (t < 1 / 6) {
-                return p + (q - p) * 6 * t;
-            }
-            if (t < 1 / 2) {
-                return q;
-            }
-            if (t < 2 / 3) {
-                return p + (q - p) * (2 / 3 - t) * 6;
-            }
-            return p;
-        }
+        C = (C + m) * precision | 0;
+        X = (X + m) * precision | 0;
+        m = m * precision | 0;
 
-        if (sat === 0) {
-            r = g = b = light;
-        }else {
-            let q = light < 0.5 ? light * (1 + s) : light + sat -light * sat;
-            let p = 2 * light - q;
-            r = hue2rgb(p, q, hue + 1 / 3);
-            g = hue2rgb(p, q, hue);
-            b = hue2rgb(p, q, hue - 1 / 3);
-        }
-
-        return {
-            r: Math.round(r * 255),
-            g: Math.round(g * 255),
-            b: Math.round(b * 255)
-        }
-
-        // let sat = s / 100;
-        // let light = l / 100;
-        // let C = sat * (1 - Math.abs(2 * light - 1));
-        // let H = h / 60;
-        // let X = C * (1 - Math.abs(H % 2 - 1));
-        // let m = light - C/2;
-        // let precision = 255;
-        //
-        // C = (C + m) * precision | 0;
-        // X = (X + m) * precision | 0;
-        // m = m * precision | 0;
-        //
-        // if (H >= 0 && H < 1) {return {r:C, g:X, b:m};}
-        // if (H >= 1 && H < 2) {return {r:X, g:C, b:m};}
-        // if (H >= 2 && H < 3) {return {r:m, g:C, b:X};}
-        // if (H >= 3 && H < 4) {return {r:m, g:X, b:C};}
-        // if (H >= 4 && H < 5) {return {r:X, g:m, b:C};}
-        // if (H >= 5 && H < 6) {return {r:C, g:m, b:X};}
+        if (H >= 0 && H < 1) {return {r:C, g:X, b:m};}
+        if (H >= 1 && H < 2) {return {r:X, g:C, b:m};}
+        if (H >= 2 && H < 3) {return {r:m, g:C, b:X};}
+        if (H >= 3 && H < 4) {return {r:m, g:X, b:C};}
+        if (H >= 4 && H < 5) {return {r:X, g:m, b:C};}
+        if (H >= 5 && H < 6) {return {r:C, g:m, b:X};}
     };
 
     /*
-    * 更具色相值获取SL选择区域应该设置的背景RGB值
+    * 根据色相值获取SL选择区域应该设置的背景RGB值
     * */
     ColorPicker.prototype.getColorAreaBackground = function(h){
-        return this.HSL2RGB(h, 100);
+        return this.HSL2RGB(h, 100, 50);
     };
 
     window.ColorPicker = ColorPicker;

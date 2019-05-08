@@ -7,19 +7,48 @@
     border: 1px solid #cccccc;
     margin-right: 20px;
     float: left;
+    position: relative;
     background: linear-gradient(top,hsl(0,0%,100%) 0%,hsla(0,0%,100%,0) 50%,hsla(0,0%,0%,0) 50%,hsl(0,0%,0%) 100%),
             linear-gradient(left, hsl(0,0%,50%) 0%,hsla(0,0%,50%,0) 100%);
     background: -webkit-linear-gradient(top,hsl(0,0%,100%) 0%,hsla(0,0%,100%,0) 50%,hsla(0,0%,0%,0) 50%,hsl(0,0%,0%) 100%),
     -webkit-linear-gradient(left, hsl(0,0%,50%) 0%,hsla(0,0%,50%,0) 100%);
     background-color: #F00;
+    .color-picker-area-dot{
+      width: 10px;
+      height: 10px;
+      -webkit-border-radius: 50%;
+      -moz-border-radius: 50%;
+      border-radius: 50%;
+      border: 1px solid #fff;
+      position: absolute;
+    }
+    .color-picker-area-dot:before{
+      content: '';
+      width: 8px;
+      height: 8px;
+      position: absolute;
+      border: 1px solid #999;
+      -webkit-border-radius: 50%;
+      -moz-border-radius: 50%;
+      border-radius: 50%;
+    }
   }
   .color-picker-bar{
     height: 200px;
     width: 20px;
     margin-right: 20px;
     float: left;
+    position: relative;
     background: linear-gradient(top, #F00 0%, #FF0 16.66%, #0F0 33.33%, #0FF 50%, #00F 66.66%, #F0F 83.33%, #F00 100%);
     background: -webkit-linear-gradient(top, #F00 0%, #FF0 16.66%, #0F0 33.33%, #0FF 50%, #00F 66.66%, #F0F 83.33%, #F00 100%);
+    .color-picker-bar-sub{
+      border: 1px solid #999;
+      background: none;
+      box-sizing: border-box;
+      height: 2px;
+      width: 20px;
+      position: absolute;
+    }
   }
   .color-picker-input-container{
     width: 120px;
@@ -36,6 +65,14 @@
       input{
         margin-left: 5px;
       }
+    }
+  }
+  .color-picker-result{
+    float: left;
+    .color-picker-result-block{
+      width: 60px;
+      height: 60px;
+      border: 1px solid #ccc;
     }
   }
 }
