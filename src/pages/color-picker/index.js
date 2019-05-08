@@ -36,8 +36,8 @@ import './index.less'
         this.pickerArea = document.createElement('div');
         this.pickerArea.classList.add('color-picker-area');
         this.pickerArea.addEventListener('click', function (ev) {
-            let s = that.s = ev.offsetX / ev.target.clientWidth * 100;
-            let l = that.l = 100 - ev.offsetY / ev.target.clientHeight * 100;
+            let s = that.s = ev.offsetX * 100 / ev.target.clientWidth | 0;
+            let l = that.l = 100 - (ev.offsetY * 100 / ev.target.clientHeight) | 0;
             const res = that.HSL2RGB(that.h, that.s, that.l);
             //更新HSL和RGB的值
             that.s = s;
@@ -52,7 +52,10 @@ import './index.less'
         this.pickerBar = document.createElement('div');
         this.pickerBar.classList.add('color-picker-bar');
         this.pickerBar.addEventListener('click', function (ev) {
-            let h = that.h = ev.offsetY / ev.target.clientHeight * 359;
+            console.log(ev.offsetY);
+            console.log(ev.pageY - that.pickerBar.offsetTop);
+
+            let h = that.h = (ev.offsetY * 359 / ev.target.clientHeight) | 0;
             let {r, g, b} = that.getColorAreaBackground(h);
             that.setPickerBarRGBA(r, g, b);
             //更新HSL和RGB的值
@@ -76,7 +79,7 @@ import './index.less'
         const that = this;
         let inputWrap = document.createElement('div');
         inputWrap.classList.add('color-picker-input-container');
-        
+
         function updateHSL() {
             const temp = that.RGB2HSL(that.r,that.g, that.b);
             that.h = temp.hue;
@@ -84,7 +87,7 @@ import './index.less'
             that.l = temp.lightness;
             that.setHSLValue();
         }
-        
+
         function updateRGB() {
             const temp = that.HSL2RGB(that.h, that.s, that.l);
             that.r = temp.r;
@@ -246,28 +249,59 @@ import './index.less'
             green = g / 255,
             blue = b / 255;
 
-        let cmax = Math.max(red, green, blue),
-            cmin = Math.min(red, green, blue),
-            delta = cmax - cmin,
-            hue = 0,
-            saturation = 0,
-            lightness = (cmax + cmin) / 2,
-            X = (1 - Math.abs(2 * lightness - 1));
+        let max = Math.max(red, green, blue),
+            min = Math.min(red, green, blue);
 
-        if (delta) {
-            if (cmax === red ) { hue = ((green - blue) / delta); }
-            if (cmax === green ) { hue = 2 + (blue - red) / delta; }
-            if (cmax === blue ) { hue = 4 + (red - green) / delta; }
-            if (cmax) saturation = delta / X;
+        let h, s, l = (max + min) / 2;
+
+        if (max === min) {
+            h = s = 0;
+        }else {
+            let d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+                case red:
+                    h = (green - blue) / d + (green < blue ? 6 : 0);
+                    break;               
+                case green:
+                    h = (blue - red) / d + 2;
+                    break;               
+                case blue:
+                    h = (red - green) / d + 4;
+                    break;
+            }
+            h /= 6;
         }
 
-        hue = 60 * hue | 0;
-        if (hue < 0) {
-            hue += 360;
-        }
-        saturation = (saturation * 100) | 0;
-        lightness = (lightness * 100) | 0;
-        return {hue, saturation, lightness};
+        return {
+            hue: Math.floor(h*100),
+            saturation: Math.round(s*100),
+            lightness: Math.round(l*100)
+        };
+
+        //
+        // let cmax = Math.max(red, green, blue),
+        //     cmin = Math.min(red, green, blue),
+        //     delta = cmax - cmin,
+        //     hue = 0,
+        //     saturation = 0,
+        //     lightness = (cmax + cmin) / 2,
+        //     X = (1 - Math.abs(2 * lightness - 1));
+        //
+        // if (delta) {
+        //     if (cmax === red ) { hue = ((green - blue) / delta); }
+        //     if (cmax === green ) { hue = 2 + (blue - red) / delta; }
+        //     if (cmax === blue ) { hue = 4 + (red - green) / delta; }
+        //     if (cmax) saturation = delta / X;
+        // }
+        //
+        // hue = 60 * hue | 0;
+        // if (hue < 0) {
+        //     hue += 360;
+        // }
+        // saturation = (saturation * 100) | 0;
+        // lightness = (lightness * 100) | 0;
+        // return {hue, saturation, lightness};
     };
 
     /*
@@ -276,22 +310,62 @@ import './index.less'
     ColorPicker.prototype.HSL2RGB = function (h = 0, s = 50, l = 50) {
         let sat = s / 100;
         let light = l / 100;
-        let C = sat * (1 - Math.abs(2 * light - 1));
-        let H = h / 60;
-        let X = C * (1 - Math.abs(H % 2 - 1));
-        let m = light - C/2;
-        let precision = 255;
+        let hue = h / 359;
+        let r, g, b;
 
-        C = (C + m) * precision | 0;
-        X = (X + m) * precision | 0;
-        m = m * precision | 0;
+        function hue2rgb(p, q, t) {
+            if (t < 0) {
+                t += 1;
+            }
+            if (t > 1) {
+                t -= 1;
+            }
+            if (t < 1 / 6) {
+                return p + (q - p) * 6 * t;
+            }
+            if (t < 1 / 2) {
+                return q;
+            }
+            if (t < 2 / 3) {
+                return p + (q - p) * (2 / 3 - t) * 6;
+            }
+            return p;
+        }
 
-        if (H >= 0 && H < 1) {return {r:C, g:X, b:m};}
-        if (H >= 1 && H < 2) {return {r:X, g:C, b:m};}
-        if (H >= 2 && H < 3) {return {r:m, g:C, b:X};}
-        if (H >= 3 && H < 4) {return {r:m, g:X, b:C};}
-        if (H >= 4 && H < 5) {return {r:X, g:m, b:C};}
-        if (H >= 5 && H < 6) {return {r:C, g:m, b:X};}
+        if (sat === 0) {
+            r = g = b = light;
+        }else {
+            let q = light < 0.5 ? light * (1 + s) : light + sat -light * sat;
+            let p = 2 * light - q;
+            r = hue2rgb(p, q, hue + 1 / 3);
+            g = hue2rgb(p, q, hue);
+            b = hue2rgb(p, q, hue - 1 / 3);
+        }
+
+        return {
+            r: Math.round(r * 255),
+            g: Math.round(g * 255),
+            b: Math.round(b * 255)
+        }
+
+        // let sat = s / 100;
+        // let light = l / 100;
+        // let C = sat * (1 - Math.abs(2 * light - 1));
+        // let H = h / 60;
+        // let X = C * (1 - Math.abs(H % 2 - 1));
+        // let m = light - C/2;
+        // let precision = 255;
+        //
+        // C = (C + m) * precision | 0;
+        // X = (X + m) * precision | 0;
+        // m = m * precision | 0;
+        //
+        // if (H >= 0 && H < 1) {return {r:C, g:X, b:m};}
+        // if (H >= 1 && H < 2) {return {r:X, g:C, b:m};}
+        // if (H >= 2 && H < 3) {return {r:m, g:C, b:X};}
+        // if (H >= 3 && H < 4) {return {r:m, g:X, b:C};}
+        // if (H >= 4 && H < 5) {return {r:X, g:m, b:C};}
+        // if (H >= 5 && H < 6) {return {r:C, g:m, b:X};}
     };
 
     /*
