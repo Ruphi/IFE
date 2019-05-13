@@ -5,8 +5,9 @@ import './index.less';
         const defaultOps = {
             data: [],
             selector: 'body',
+            containerWidth: 500,
+            containerHeight: 300
         };
-        
         this.options = Object.assign(defaultOps, options);
 
         this.init();
@@ -33,6 +34,16 @@ import './index.less';
                 tagFragment.appendChild(tag);
             }
             this.tagCloudContainer.appendChild(tagFragment);
+            const tags = this.tagCloudContainer.querySelectorAll('.tag');
+            for (let i = 0; i < tags.length; i++) {
+                const temp = {
+                    left: Math.round(Math.random() * this.options.containerWidth),
+                    top: Math.round(Math.random() * this.options.containerHeight)
+                };
+                tags[i].style.top = temp.top + 'px';
+                tags[i].style.left = temp.left + 'px';
+                console.log(tags[i].offsetLeft);
+            }
         },
         
         initContainer: function (selector) {
@@ -50,6 +61,8 @@ import './index.less';
             }
 
             const container = document.createElement('div');
+            container.style.width = this.options.width + 'px';
+            container.style.height = this.options.height + 'px';
             container.className = 'tag-cloud-container';
             this.tagCloudContainer  = container;
 
