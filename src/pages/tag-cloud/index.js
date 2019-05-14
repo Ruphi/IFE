@@ -10,6 +10,8 @@ import './index.less';
         };
         this.options = Object.assign(defaultOps, options);
         this.tags = [];
+        this.DIFF = 60;
+        this.SMALL_DIFF = 10;
 
         this.init();
     };
@@ -20,6 +22,7 @@ import './index.less';
         init: function(){
             this.initContainer(this.options.selector);
             this.initTag();
+            this.bindTagEvent();
         },
 
         initTag: function () {
@@ -32,72 +35,73 @@ import './index.less';
                 tag.innerHTML = `
                     <a href="#">${data[i]['text']}</a>
                 `;
+                tag.setAttribute('data-index', i);
                 tagFragment.appendChild(tag);
+                this.tags.push({index: i, tag: tag});
             }
             this.tagCloudContainer.appendChild(tagFragment);
-            const tags = this.tagCloudContainer.querySelectorAll('.tag');
-            this.tags = tags;
-            for (let i = 0; i < tags.length; i++) {
+            for (let i = 0; i < this.tags.length; i++) {
                 const temp = {
                     left: Math.round(Math.random() * (this.options.containerWidth*0.618)),
                     top: Math.round(Math.random() * this.options.containerHeight)
                 };
-                tags[i].style.top = temp.top + 'px';
-                tags[i].style.left = temp.left + 'px';
+                this.tags[i].tag.style.top = temp.top + 'px';
+                this.tags[i].tag.style.left = temp.left + 'px';
             }
             this.setTagAnimation();
         },
 
+        tagAnimation: function (index, tag){
+            //animation参数：动画名称、动画时长、动画时长分布计算函数、延迟时间、动画次数、是否来回、模式、状态
+            //e.g slidein 3s ease-in 1s infinite reverse both running
+            let duration = Math.round(Math.abs(this.options.data[index].weight+1) * 10);
+            let rpDuration = Math.round(duration * (this.options.containerHeight + this.DIFF * 2) / (this.tags[index].offsetTop + this.DIFF));
+
+            tag.style.zIndex = Math.round(Math.abs(this.options.data[index].weight + 1) * 10000) + '';
+
+            tag.style['animation'] = `tagAnimation${index} ${duration}s linear 0s 1 running`;
+            tag.style['-webkit-animation'] = `tagAnimation${index} ${duration}s linear 0s 1 running`;
+
+            this.tags[index].timeOut = setTimeout(function () {
+                tag.style['animation'] = `tagAnimationRep${index} ${rpDuration}s linear 0s infinite running`;
+                tag.style['-webkit-animation'] = `tagAnimationRep${index} ${rpDuration}s linear 0s infinite running`;
+            }, duration * 1000);
+        },
+
         setTagAnimation: function (){
-            const that = this;
-            const data = this.options.data;
-            function tagAnimation(index,tag) {
-                //animation参数：动画名称、动画时长、动画时长分布计算函数、延迟时间、动画次数、是否来回、模式、状态
-                //e.g slidein 3s ease-in 1s infinite reverse both running
-                let duration = Math.abs(data[index].weight+1) * 2;
-                let delay = Math.random();
-                tag.style['animation'] = `tagAnimation ${duration}s linear ${delay}s 1 running`;
-                tag.style['-webkit-animation'] = `tagAnimation ${duration}s linear ${delay}s 1 running`;
-                setTimeout(function () {
-                    tag.style['animation'] = `tagAnimationRep ${duration}s linear ${delay}s infinite running`;
-                    tag.style['-webkit-animation'] = `tagAnimationRep ${duration}s linear ${delay}s infinite running`;
-                }, duration * 1000);
-            }
             const tags = this.tags;
+
             for (let i = 0; i < tags.length; i++) {
-                that.initKeyFrames();
-                tagAnimation(i, tags[i]);
+                tags[i].offsetTop = tags[i].tag.offsetTop;
+                this.initKeyFrames(i, tags);
+                this.tagAnimation(i, tags[i].tag);
             }
         },
 
-        initKeyFrames: function (){
-            const that = this;
-            let fromTop = this.options.containerHeight + 60;
-            const styleWrap = document.createElement('style');
-            styleWrap.type = 'text/css';
-            const styleInit = `
-                @keyframes tagAnimationRep {
+        initKeyFrames: function (i, tags){
+            let fromTop = this.options.containerHeight + this.DIFF;
+            tags[i].styleWrap = document.createElement('style');
+            tags[i].styleWrap.type = 'text/css';
+            let top = tags[i].offsetTop - this.SMALL_DIFF;
+            tags[i].styleWrap.innerHTML = `
+                    @keyframes tagAnimationRep${i} {
                         from {
                             top: ${fromTop}px;
                         }
                         to {
-                            top: -60px;
+                            top: -${this.DIFF}px;
                         }
-                }
-            `;
-            for (let i = 0; i < this.options.data.length; i++) {
-                let top = this.tags[i].offsetTop - 60;
-                const style = `
+                    }
                     @keyframes tagAnimation${i} {
                             from {
                                 top: ${top}px;
                             }
                             to {
-                                top: -60px
+                                top: -${this.DIFF}px
                             }
                     }
-                `
-            }
+                `;
+            document.head.appendChild(tags[i].styleWrap);
         },
         
         initContainer: function (selector) {
@@ -127,6 +131,31 @@ import './index.less';
             }else {
                 wrap.appendChild(this.tagCloudContainer);
             }
+        },
+
+        bindTagEvent: function () {
+            const that = this;
+            const tags = this.tags;
+            for (let i = 0; i < tags.length; i++) {
+                tags[i].tag.addEventListener('mouseenter', function (ev) {
+                    ev.stopImmediatePropagation();
+                    let temp = this.offsetTop;
+                    let index = Number(this.getAttribute('data-index'));
+                    clearTimeout(tags[index].timeOut);
+                    document.head.removeChild(tags[index].styleWrap);
+
+                    this.style.animation = '';
+                    this.style.webkitAnimation = '';
+                    this.style.top = temp - that.SMALL_DIFF + 'px';
+                });
+                tags[i].tag.addEventListener('mouseleave', function (ev) {
+                    ev.stopImmediatePropagation();
+                    let index = Number(this.getAttribute('data-index'));
+                    tags[i].offsetTop = this.offsetTop;
+                    that.initKeyFrames(index, tags);
+                    that.tagAnimation(index, this);
+                })
+            }
         }
     };
 
@@ -137,7 +166,7 @@ const mockData = [];
 for (let i = 0; i < 20; i+=2) {
     mockData.push({
         text: '标签'+i,
-        weight: i
+        weight: Math.random()
     });
 }
 

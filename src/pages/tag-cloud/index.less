@@ -16,8 +16,7 @@
     color: lightseagreen;
     cursor: pointer;
     position: absolute;
-    //animation: slidein 3s linear 1s infinite running;
-    //-webkit-animation: slidein 3s linear 1s infinite running;
+    box-sizing: border-box;
     a{
       color: inherit;
       text-decoration-line: none;
@@ -26,14 +25,5 @@
       background-color: rgba(32, 178, 170, 0.5);
       color: #373333;
     }
-  }
-}
-
-@keyframes tagAnimation {
-  from {
-    top: @containerHeight+60px;
-  }
-  to {
-    top: 0-60px;
   }
 }
