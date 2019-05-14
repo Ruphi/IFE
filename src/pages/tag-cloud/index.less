@@ -1,6 +1,9 @@
+@containerWidth: 500px;
+@containerHeight: 300px;
 .tag-cloud-container{
-  width: 500px;
-  height: 300px;
+  overflow: hidden;
+  width: @containerWidth;
+  height: @containerHeight;
   border: 1px solid #ccc;
   position: relative;
   border-radius: 4px;
@@ -13,17 +16,24 @@
     color: lightseagreen;
     cursor: pointer;
     position: absolute;
+    //animation: slidein 3s linear 1s infinite running;
+    //-webkit-animation: slidein 3s linear 1s infinite running;
     a{
       color: inherit;
       text-decoration-line: none;
     }
-  }
-  .tag:hover{
-    background-color: rgba(32, 178, 170, 0.5);
-    color: #373333;
+    &:hover{
+      background-color: rgba(32, 178, 170, 0.5);
+      color: #373333;
+    }
   }
 }
 
 @keyframes tagAnimation {
-
+  from {
+    top: @containerHeight+60px;
+  }
+  to {
+    top: 0-60px;
+  }
 }

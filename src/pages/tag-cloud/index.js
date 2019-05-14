@@ -9,6 +9,7 @@ import './index.less';
             containerHeight: 300
         };
         this.options = Object.assign(defaultOps, options);
+        this.tags = [];
 
         this.init();
     };
@@ -35,14 +36,45 @@ import './index.less';
             }
             this.tagCloudContainer.appendChild(tagFragment);
             const tags = this.tagCloudContainer.querySelectorAll('.tag');
+            this.tags = tags;
             for (let i = 0; i < tags.length; i++) {
                 const temp = {
-                    left: Math.round(Math.random() * this.options.containerWidth),
+                    left: Math.round(Math.random() * (this.options.containerWidth*0.618)),
                     top: Math.round(Math.random() * this.options.containerHeight)
                 };
                 tags[i].style.top = temp.top + 'px';
                 tags[i].style.left = temp.left + 'px';
-                console.log(tags[i].offsetLeft);
+            }
+            this.setTagAnimation();
+        },
+
+        setTagAnimation: function (){
+            const data = this.options.data;
+            function tagAnimation(index,tag) {
+                //animation参数：动画名称、动画时长、动画时长分布计算函数、延迟时间、动画次数、是否来回、模式、状态
+                //e.g slidein 3s ease-in 1s infinite reverse both running
+                let duration = Math.abs(data[index].weight+1) * 2;
+                let delay = Math.random();
+                tag.style['animation'] = `tagAnimation ${duration}s linear ${delay}s infinite running`;
+                tag.style['-webkit-animation'] = `tagAnimation ${duration}s linear ${delay}s infinite running`;
+            }
+            const tags = this.tags;
+            for (let i = 0; i < tags.length; i++) {
+                tagAnimation(i, tags[i]);
+            }
+        },
+
+        initKeyFrames: function (){
+            for (let i = 0; i < this.options.data.length; i++) {
+                const style = `
+                    <style type="text/css">
+                        @keyframes tagAnimation${i} {
+                            0% {
+                                top: ;
+                            }
+                        }
+                    </style>
+                `
             }
         },
         
@@ -61,8 +93,8 @@ import './index.less';
             }
 
             const container = document.createElement('div');
-            container.style.width = this.options.width + 'px';
-            container.style.height = this.options.height + 'px';
+            container.style.width = this.options.containerWidth + 'px';
+            container.style.height = this.options.containerHeight + 'px';
             container.className = 'tag-cloud-container';
             this.tagCloudContainer  = container;
 
