@@ -49,31 +49,53 @@ import './index.less';
         },
 
         setTagAnimation: function (){
+            const that = this;
             const data = this.options.data;
             function tagAnimation(index,tag) {
                 //animation参数：动画名称、动画时长、动画时长分布计算函数、延迟时间、动画次数、是否来回、模式、状态
                 //e.g slidein 3s ease-in 1s infinite reverse both running
                 let duration = Math.abs(data[index].weight+1) * 2;
                 let delay = Math.random();
-                tag.style['animation'] = `tagAnimation ${duration}s linear ${delay}s infinite running`;
-                tag.style['-webkit-animation'] = `tagAnimation ${duration}s linear ${delay}s infinite running`;
+                tag.style['animation'] = `tagAnimation ${duration}s linear ${delay}s 1 running`;
+                tag.style['-webkit-animation'] = `tagAnimation ${duration}s linear ${delay}s 1 running`;
+                setTimeout(function () {
+                    tag.style['animation'] = `tagAnimationRep ${duration}s linear ${delay}s infinite running`;
+                    tag.style['-webkit-animation'] = `tagAnimationRep ${duration}s linear ${delay}s infinite running`;
+                }, duration * 1000);
             }
             const tags = this.tags;
             for (let i = 0; i < tags.length; i++) {
+                that.initKeyFrames();
                 tagAnimation(i, tags[i]);
             }
         },
 
         initKeyFrames: function (){
-            for (let i = 0; i < this.options.data.length; i++) {
-                const style = `
-                    <style type="text/css">
-                        @keyframes tagAnimation${i} {
-                            0% {
-                                top: ;
-                            }
+            const that = this;
+            let fromTop = this.options.containerHeight + 60;
+            const styleWrap = document.createElement('style');
+            styleWrap.type = 'text/css';
+            const styleInit = `
+                @keyframes tagAnimationRep {
+                        from {
+                            top: ${fromTop}px;
                         }
-                    </style>
+                        to {
+                            top: -60px;
+                        }
+                }
+            `;
+            for (let i = 0; i < this.options.data.length; i++) {
+                let top = this.tags[i].offsetTop - 60;
+                const style = `
+                    @keyframes tagAnimation${i} {
+                            from {
+                                top: ${top}px;
+                            }
+                            to {
+                                top: -60px
+                            }
+                    }
                 `
             }
         },
