@@ -1,7 +1,8 @@
 {
-  "title": "百度IFE2017任务列表",
+  "title": "百度IFE任务列表",
   "list": [
     {"name": "色彩选择器", "url": "./color-picker.html"},
-    {"name": "标签云", "url": "./tag-cloud.html"}
+    {"name": "标签云", "url": "./tag-cloud.html"},
+    {"name": "巨型画布", "url": "./big-canvas.html"}
   ]
 }
